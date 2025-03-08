@@ -1,18 +1,18 @@
-import "./global.css";
-import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
-import { type Theme, ThemeProvider } from "@react-navigation/native";
-import { SplashScreen, Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import * as React from "react";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { PortalHost } from "@/components/primitives/portal";
 import { DatabaseProvider } from "@/db/provider";
 import { setAndroidNavigationBar } from "@/lib/android-navigation-bar";
 import { NAV_THEME } from "@/lib/constants";
-import { useColorScheme } from "@/lib/useColorScheme";
 import { getItem, setItem } from "@/lib/storage";
+import { useColorScheme } from "@/lib/useColorScheme";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+// @ts-expect-error
+import { ThemeProvider, type Theme } from "@react-navigation/native";
+import { SplashScreen, Stack } from "expo-router";
+import * as React from "react";
 import { Platform } from "react-native";
 import { SystemBars } from "react-native-edge-to-edge";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import "./global.css";
 const NAV_FONT_FAMILY = "Inter";
 const LIGHT_THEME: Theme = {
   dark: false,
@@ -61,7 +61,7 @@ const DARK_THEME: Theme = {
 
 export {
   // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
+  ErrorBoundary
 } from "expo-router";
 
 export const unstable_settings = {
@@ -124,7 +124,6 @@ export default function RootLayout() {
               </Stack>
             </BottomSheetModalProvider>
           </GestureHandlerRootView>
-
         </ThemeProvider>
       </DatabaseProvider>
       <PortalHost />

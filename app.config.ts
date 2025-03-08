@@ -43,7 +43,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         "enforceNavigationBarContrast": false
       }
     }
-  ]],
+  ],   [
+        "expo-font",
+        {
+          "fonts": [
+            "./node_modules/@react-native-vector-icons/material-design-icons/fonts/MaterialDesignIcons.ttf"]
+        }
+      ]],
   experiments: {
     typedRoutes: true,
     baseUrl: "/expo-local-first-template",

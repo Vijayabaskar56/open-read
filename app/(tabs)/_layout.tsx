@@ -1,47 +1,51 @@
-import { Platform } from 'react-native';
 import { Tabs } from "@/components/bottom-tabs";
-import { List } from '@/lib/icons/List';
-import { Settings } from '@/lib/icons/Settings';
-
+import { Platform, useColorScheme } from 'react-native';
+import Icon from '@react-native-vector-icons/material-design-icons';
 export const unstable_settings = {
   initialRouteName: "index",
 };
 
-const getTabIcon = (iconName: string) => {
-  if (Platform.OS === 'ios') {
-    return () => ({ sfSymbol: iconName });
-  } else if (Platform.OS === 'android') {
-    return () => ({ materialIcon: iconName });
-  } else {
-    // Web and other platforms
-    return ({ color }: { color: string }) =>
-      iconName === 'home' ? <List className="text-foreground" /> : <Settings className="text-foreground" />;
-  }
-};
+const homeIcon = Icon.getImageSourceSync('home', 24);
+const ticketsIcon = Icon.getImageSourceSync('ticket-confirmation', 24);
+
 
 export default function TabLayout() {
+  const colorScheme = useColorScheme();
+
   return (
-    <Tabs>
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: colorScheme === 'dark' ? '#ff6b6b' : '#e53e3e',
+      }}
+      tabBarStyle={{
+        backgroundColor: colorScheme === 'dark' ? '#1A202C' : '#FFFFFF',
+      }}
+      activeIndicatorColor={colorScheme === 'dark' ? '#ff6b6b80' : '#e53e3e80'}
+      hapticFeedbackEnabled={true}
+      scrollEdgeAppearance="opaque"
+      translucent={true}
+      labeled={true}
+    >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Habits',
-          // tabBarIcon: getTabIcon(Platform.select({
-          //   ios: 'house',
-          //   android: 'home',
-          //   default: 'home'
-          // })),
+          tabBarIcon: ({ focused }) =>
+            Platform.select({
+              ios: { sfSymbol: focused ? 'house.fill' : 'house' },
+              android: homeIcon as any
+            })
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
-          // tabBarIcon: getTabIcon(Platform.select({
-          //   ios: 'person',
-          //   android: 'person',
-          //   default: 'settings'
-          // })),
+          tabBarIcon: ({ focused }) =>
+            Platform.select({
+              ios: { sfSymbol: focused ? 'wallet.pass.fill' : 'wallet.pass' },
+              android: ticketsIcon as any
+            })
         }}
       />
     </Tabs>
