@@ -1,57 +1,34 @@
-import {zodResolver} from "@hookform/resolvers/zod";
-import {createInsertSchema} from "drizzle-zod";
-import {Link, Stack, useRouter} from "expo-router";
+import { Button } from "@/components/ui/button";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { createInsertSchema } from "drizzle-zod";
+import { Stack, useRouter } from "expo-router";
 import * as React from "react";
-import {useForm} from "react-hook-form";
-import {Alert, Platform, Pressable, ScrollView, View} from "react-native";
-import {useSafeAreaInsets} from "react-native-safe-area-context";
+import { useForm } from "react-hook-form";
+import { ActivityIndicator, Alert, Pressable, ScrollView, TextInput, View, useColorScheme } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as z from "zod";
-import {Button} from "@/components/ui/button";
-import {
-  Form,
-  FormCheckbox,
-  FormCombobox,
-  FormElement,
-  FormField,
-  FormInput,
-  FormRadioGroup,
-  FormSelect,
-  FormSwitch,
-  FormTextarea,
-} from "@/components/ui/form";
-import {Label} from "@/components/ui/label";
-import {RadioGroupItem} from "@/components/ui/radio-group";
-import {
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
-import {Text} from "@/components/ui/text";
-import {habitTable} from "@/db/schema";
-import {cn} from "@/lib/utils";
-import {useDatabase} from "@/db/provider";
-import {X} from "lucide-react-native";
-
+import { Text } from "@/components/ui/text";
+import { useDatabase } from "@/db/provider";
+import { habitTable } from "@/db/schema";
+import * as rssParser from 'react-native-rss-parser';
 
 const HabitCategories = [
-  {value: "health", label: "Health And Wellness"},
-  {value: "personal-development", label: "Personal Development"},
-  {value: "social-and-relationshipts", label: "Social And Relationships"},
-  {value: "productivity", label: "Productivity"},
-  {value: "creativity", label: "Creativity"},
-  {value: "mindfulness", label: "Mindfulness"},
-  {value: "financial", label: "Financial"},
-  {value: "leisure", label: "Leisure"},
+  { value: "health", label: "Health And Wellness" },
+  { value: "personal-development", label: "Personal Development" },
+  { value: "social-and-relationshipts", label: "Social And Relationships" },
+  { value: "productivity", label: "Productivity" },
+  { value: "creativity", label: "Creativity" },
+  { value: "mindfulness", label: "Mindfulness" },
+  { value: "financial", label: "Financial" },
+  { value: "leisure", label: "Leisure" },
 ];
 
 const HabitDurations = [
-  {value: 5, label: "5 minutes"},
-  {value: 10, label: "10 minutes"},
-  {value: 15, label: "15 minutes"},
-  {value: 30, label: "30 minutes"},
+  { value: 5, label: "5 minutes" },
+  { value: 10, label: "10 minutes" },
+  { value: 15, label: "15 minutes" },
+  { value: 30, label: "30 minutes" },
 ];
 
 const formSchema = createInsertSchema(habitTable, {
@@ -62,7 +39,7 @@ const formSchema = createInsertSchema(habitTable, {
     message: "We need to know.",
   }),
   category: z.object(
-    {value: z.string(), label: z.string()},
+    { value: z.string(), label: z.string() },
     {
       invalid_type_error: "Please select a favorite email.",
     },
@@ -75,19 +52,64 @@ const formSchema = createInsertSchema(habitTable, {
 // TODO: refactor to use UI components
 
 export default function FormScreen() {
-  const {db} = useDatabase();
+  const { db } = useDatabase();
   const router = useRouter();
 
   const scrollRef = React.useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
   const [selectTriggerWidth, setSelectTriggerWidth] = React.useState(0);
+  const [url, setUrl] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  // const { addFeed, categories } = useFeedStore();
+
+  const handleAddFeed = async () => {
+    if (!url) {
+      Alert.alert('Error', 'Please enter a valid RSS feed URL');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(url);
+      const responseData = await response.text();
+      const result = await rssParser.parse(responseData);
+
+      const feed: Feed = {
+        id: Date.now().toString(),
+        title: result.title,
+        url,
+        category: 'default',
+        lastUpdated: new Date().toISOString(),
+        items: result.items.map(item => ({
+          id: item.id || Date.now().toString(),
+          title: item.title,
+          description: item.description,
+          link: item.links[0]?.url || '',
+          published: item.published,
+          thumbnail: item.enclosures?.[0]?.url,
+          isRead: false,
+          isBookmarked: false,
+        })),
+      };
+
+      // await addFeed(feed);
+      setUrl('');
+      Alert.alert('Success', 'Feed added successfully');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to add feed. Please check the URL and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       description: "",
       duration: 5,
-      category: {value: "health", label: "Health And Wellness"},
+      category: { value: "health", label: "Health And Wellness" },
       enableNotifications: false,
     },
   });
@@ -100,7 +122,6 @@ export default function FormScreen() {
   };
 
   async function handleSubmit(values: z.infer<typeof formSchema>) {
-
     try {
       await db?.insert(habitTable).values({
         ...values,
@@ -118,9 +139,8 @@ export default function FormScreen() {
       contentContainerClassName="p-6 mx-auto w-full max-w-xl"
       showsVerticalScrollIndicator={true}
       className="bg-background"
-
       automaticallyAdjustContentInsets={false}
-      contentInset={{top: 12}}
+      contentInset={{ top: 12 }}
     >
       <Stack.Screen
         options={{
@@ -129,151 +149,29 @@ export default function FormScreen() {
           // headerRight: () => Platform.OS !== "web" && <Pressable onPress={() => router.dismiss()}><X /></Pressable>
         }}
       />
-
-      <Form {...form}>
-        <View className="gap-8">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({field}) => (
-              <FormInput
-                label="Name"
-                placeholder="Habit name"
-                className="text-foreground"
-                description="This will help you remind."
-                autoCapitalize="none"
-                {...field}
-              />
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="description"
-            render={({field}) => (
-              <FormTextarea
-                label="Description"
-                placeholder="Habit for ..."
-                description="habit description"
-                {...field}
-              />
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="category"
-            render={({field}) => (
-              <FormSelect
-                label="Category"
-                description="Select on of the habit description"
-                {...field}
-              >
-                <SelectTrigger
-                  onLayout={(ev) => {
-                    setSelectTriggerWidth(ev.nativeEvent.layout.width);
-                  }}
-                >
-                  <SelectValue
-                    className={cn(
-                      "text-sm native:text-lg",
-                      field.value ? "text-foreground" : "text-muted-foreground",
-                    )}
-                    placeholder="Select a habit category"
-                  />
-                </SelectTrigger>
-                <SelectContent
-                  insets={contentInsets}
-                  style={{width: selectTriggerWidth}}
-                >
-                  <SelectGroup>
-                    {HabitCategories.map((cat) => (
-                      <SelectItem
-                        key={cat.value}
-                        label={cat.label}
-                        value={cat.value}
-                      >
-                        <Text>{cat.label}</Text>
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </FormSelect>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="duration"
-            render={({field}) => {
-              function onLabelPress(value: number | string) {
-                return () => {
-                  form.setValue("duration", value);
-                };
-              }
-              return (
-                <FormRadioGroup
-                  label="Duration"
-                  description="Select your duration."
-                  className="gap-4"
-                  {...field}
-                  value={field.value.toString()}
-                >
-                  {HabitDurations.map((item) => {
-                    return (
-                      <View
-                        key={item.value}
-                        className={"flex-row gap-2 items-center"}
-                      >
-                        <RadioGroupItem
-                          aria-labelledby={`label-for-${ item.label }`}
-                          value={item.value.toString()}
-                        />
-                        <Label
-                          nativeID={`label-for-${ item.label }`}
-                          className="capitalize"
-                          onPress={onLabelPress(item.value)}
-                        >
-                          {item.label}
-                        </Label>
-                      </View>
-                    );
-                  })}
-                </FormRadioGroup>
-              );
-            }}
-          />
-
-          <FormField
-            control={form.control}
-            name="enableNotifications"
-            render={({field}) => (
-              <FormSwitch
-                label="Enable reminder"
-                description="We will send you notification reminder."
-                {...field}
-              />
-            )}
-          />
-
-          <Button onPress={form.handleSubmit(handleSubmit)}>
-            <Text>Submit</Text>
-          </Button>
-          <View>
-            <Button
-              variant="ghost"
-              onPress={() => {
-                form.reset();
-              }}
-            >
-              <Text>Clear</Text>
-            </Button>
-          </View>
-
-
-        </View>
-      </Form>
-
+      <View >
+        <Text>Feed URL</Text>
+        <TextInput
+          value={url}
+          onChangeText={setUrl}
+          placeholder="Enter RSS feed URL"
+          placeholderTextColor={isDark ? '#888888' : '#666666'}
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        <Pressable
+          onPress={handleAddFeed}
+          disabled={loading}>
+          {loading ? (
+            <ActivityIndicator color="#ffffff" />
+          ) : (
+            <Text>Add Feed</Text>
+          )}
+        </Pressable>
+        <Button onPress={form.handleSubmit(handleSubmit)}>
+          <Text>Submit</Text>
+        </Button>
+      </View>
     </ScrollView >
   );
 }
